@@ -56,15 +56,17 @@ import com.example.reply.R
 import com.example.reply.data.Email
 import com.example.reply.data.MailboxType
 import com.example.reply.data.local.LocalAccountsDataProvider
+import com.example.reply.ui.utils.ReplyContentType
 import com.example.reply.ui.utils.ReplyNavigationType
 
 @Composable
-fun ReplyHomeScreen(
+private fun ReplyAppContent(
     navigationType: ReplyNavigationType,
+    contentType: ReplyContentType,
     replyUiState: ReplyUiState,
-    onTabPressed: (MailboxType) -> Unit,
+    onTabPressed: ((MailboxType) -> Unit),
     onEmailCardPressed: (Email) -> Unit,
-    onDetailScreenBackPressed: () -> Unit,
+    navigationItemContentList: List<NavigationItemContent>,
     modifier: Modifier = Modifier
 ) {
     val navigationItemContentList = listOf(
@@ -89,13 +91,11 @@ fun ReplyHomeScreen(
             text = stringResource(id = R.string.tab_spam)
         )
     )
-    if (navigationType == ReplyNavigationType.PERMANENT_NAVIGATION_DRAWER && replyUiState.isShowingHomepage) {
+    if (navigationType == ReplyNavigationType.PERMANENT_NAVIGATION_DRAWER) {
         val navigationDrawerContentDescription = stringResource(R.string.navigation_drawer)
         PermanentNavigationDrawer(
             drawerContent = {
-                PermanentDrawerSheet(Modifier.width(dimensionResource(R.dimen.drawer_width)),
-                    drawerContainerColor = MaterialTheme.colorScheme.inverseOnSurface
-                    ) {
+                PermanentDrawerSheet(Modifier.width(dimensionResource(R.dimen.drawer_width))) {
                     NavigationDrawerContent(
                         selectedDestination = replyUiState.currentMailbox,
                         onTabPressed = onTabPressed,
@@ -111,30 +111,35 @@ fun ReplyHomeScreen(
         ) {
             ReplyAppContent(
                 navigationType = navigationType,
+                contentType = contentType,
                 replyUiState = replyUiState,
                 onTabPressed = onTabPressed,
                 onEmailCardPressed = onEmailCardPressed,
                 navigationItemContentList = navigationItemContentList,
-                modifier = modifier,
-            )
-        }
-    } else {
-        if (replyUiState.isShowingHomepage) {
-            ReplyAppContent(
-                navigationType = navigationType,
-                replyUiState = replyUiState,
-                onTabPressed = onTabPressed,
-                onEmailCardPressed = onEmailCardPressed,
-                navigationItemContentList = navigationItemContentList,
-                modifier = modifier,
-            )
-        } else {
-            ReplyDetailsScreen(
-                replyUiState = replyUiState,
-                onBackPressed = onDetailScreenBackPressed,
                 modifier = modifier
             )
         }
+    } else {
+        // Aquí, quitamos la condición `replyUiState.isShowingHomepage`
+        ReplyAppContent(
+            navigationType = navigationType,
+            contentType = contentType,
+            replyUiState = replyUiState,
+            onTabPressed = onTabPressed,
+            onEmailCardPressed = onEmailCardPressed,
+            navigationItemContentList = navigationItemContentList,
+            modifier = modifier
+        )
+    }
+
+    // Código para mostrar la pantalla de detalles si es necesario
+    if (!replyUiState.isShowingHomepage) {
+        ReplyDetailsScreen(
+            replyUiState = replyUiState,
+            isFullScreen = true,
+            onBackButtonClicked = onDetailScreenBackPressed,
+            modifier = modifier
+        )
     }
 }
 
@@ -148,7 +153,7 @@ private fun ReplyAppContent(
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier)
-        
+
     {
         Row(modifier = Modifier.fillMaxSize()) {
             AnimatedVisibility(visible = navigationType == ReplyNavigationType.NAVIGATION_RAIL) {
@@ -161,27 +166,33 @@ private fun ReplyAppContent(
                 )
             }
             Column(
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.inverseOnSurface)
             ) {
-                ReplyListOnlyContent(
-                    replyUiState = replyUiState,
-                    onEmailCardPressed = onEmailCardPressed,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = dimensionResource(R.dimen.email_list_only_horizontal_padding))
-                        .padding(top = dimensionResource(R.dimen.detail_subject_padding_end))
-                )
-                AnimatedVisibility(
-                    visible = navigationType == ReplyNavigationType.BOTTOM_NAVIGATION
-                ) {
+
+                val contentType = null
+                if (contentType == ReplyContentType.LIST_AND_DETAIL) {
+                    ReplyListAndDetailContent(
+                        replyUiState = replyUiState,
+                        onEmailCardPressed = onEmailCardPressed,
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    ReplyListOnlyContent(
+                        replyUiState = replyUiState,
+                        onEmailCardPressed = onEmailCardPressed,
+                        modifier = Modifier.weight(1f)
+                            .padding(
+                                horizontal = dimensionResource(R.dimen.email_list_only_horizontal_padding)
+                            )
+                    )
+                }
+                AnimatedVisibility(visible = navigationType == ReplyNavigationType.BOTTOM_NAVIGATION) {
                     ReplyBottomNavigationBar(
                         currentTab = replyUiState.currentMailbox,
                         onTabPressed = onTabPressed,
-                        navigationItemContentList = navigationItemContentList,
-                        modifier = Modifier
-                            .fillMaxWidth()
+                        navigationItemContentList = navigationItemContentList
                     )
                 }
             }
