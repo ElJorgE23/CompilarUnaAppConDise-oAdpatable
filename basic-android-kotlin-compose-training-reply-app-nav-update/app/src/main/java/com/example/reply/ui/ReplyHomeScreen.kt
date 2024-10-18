@@ -58,6 +58,8 @@ import com.example.reply.data.MailboxType
 import com.example.reply.data.local.LocalAccountsDataProvider
 import com.example.reply.ui.utils.ReplyContentType
 import com.example.reply.ui.utils.ReplyNavigationType
+import android.app.Activity
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 private fun ReplyAppContent(
@@ -120,7 +122,7 @@ private fun ReplyAppContent(
             )
         }
     } else {
-        // Aquí, quitamos la condición `replyUiState.isShowingHomepage`
+
         ReplyAppContent(
             navigationType = navigationType,
             contentType = contentType,
@@ -134,11 +136,11 @@ private fun ReplyAppContent(
 
     // Código para mostrar la pantalla de detalles si es necesario
     if (!replyUiState.isShowingHomepage) {
+        val activity = LocalContext.current as Activity
         ReplyDetailsScreen(
             replyUiState = replyUiState,
-            isFullScreen = true,
-            onBackButtonClicked = onDetailScreenBackPressed,
-            modifier = modifier
+            modifier = Modifier.weight(1f),
+            onBackPressed = { activity.finish() }
         )
     }
 }
